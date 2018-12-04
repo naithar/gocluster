@@ -74,10 +74,12 @@ func TestCluster_GetTileDefault(t *testing.T) {
 	for i := range result {
 		rp := result[i]
 		ep := expectedPoints[i]
-		assert.Equal(t, rp.getX(), ep.Geometry[0][0])
-		assert.Equal(t, rp.getY(), ep.Geometry[0][1])
-		if rp.getNumPoints() > 1 {
-			assert.Equal(t, rp.getNumPoints(), ep.Tags.PointCount)
+		X, Y := rp.Coordinates()
+
+		assert.Equal(t, X, ep.Geometry[0][0])
+		assert.Equal(t, Y, ep.Geometry[0][1])
+		if rp.NumberOfPoints() > 1 {
+			assert.Equal(t, rp.NumberOfPoints(), ep.Tags.PointCount)
 		}
 
 	}
@@ -114,12 +116,13 @@ func TestCluster_GetClusters(t *testing.T) {
 		rp := result[i]
 		ep := expectedPoints[i]
 
-		t.Logf("Zoom: %v", rp.getZoom())
-		t.Logf("Coordinates are: %v, %v", rp.getX(), ep.Geometry.Coordinates[0])
-		assert.True(t, floatEquals(rp.getX(), ep.Geometry.Coordinates[0]))
-		assert.True(t, floatEquals(rp.getY(), ep.Geometry.Coordinates[1]))
-		if rp.getNumPoints() > 1 {
-			assert.Equal(t, rp.getNumPoints(), ep.Properties.PointCount)
+		t.Logf("Zoom: %v", rp.Zoom())
+		X, Y := rp.Coordinates()
+		t.Logf("Coordinates are: %v, %v", X, ep.Geometry.Coordinates[0])
+		assert.True(t, floatEquals(X, ep.Geometry.Coordinates[0]))
+		assert.True(t, floatEquals(Y, ep.Geometry.Coordinates[1]))
+		if rp.NumberOfPoints() > 1 {
+			assert.Equal(t, rp.NumberOfPoints(), ep.Properties.PointCount)
 		}
 	}
 

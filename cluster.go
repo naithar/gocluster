@@ -50,15 +50,16 @@ func (dc defaultCustomizer) AggregateClusterPoints(point ClusterPoint, aggregate
 //could have only one point or set of points
 type ClusterPoint interface {
 	Coordinates() (float64, float64)
-	getX() float64
-	getY() float64
-	setX(float64) ClusterPoint
-	setY(float64) ClusterPoint
-	setZoom(int) ClusterPoint
-	getZoom() int
-	setNumPoints(int) ClusterPoint
-	getNumPoints() int
-	setId(int) ClusterPoint
+	SetCoordinates(X, Y float64) ClusterPoint
+
+	SetZoom(int) ClusterPoint
+	Zoom() int
+
+	SetNumberOfPoints(int) ClusterPoint
+	NumberOfPoints() int
+
+	SetID(int) ClusterPoint
+	ID() int
 }
 
 type clusterPoint struct {
@@ -72,42 +73,37 @@ func (cp clusterPoint) Coordinates() (float64, float64) {
 	return cp.X, cp.Y
 }
 
-func (cp clusterPoint) getX() float64 {
-	return cp.X
-}
-
-func (cp clusterPoint) getY() float64 {
-	return cp.Y
-}
-
-func (cp clusterPoint) setX(x float64) ClusterPoint {
-	cp.X = x
+func (cp clusterPoint) SetCoordinates(X, Y float64) ClusterPoint {
+	cp.X = X
+	cp.Y = Y
 	return cp
 }
 
-func (cp clusterPoint) setY(y float64) ClusterPoint {
-	cp.Y = y
-	return cp
-}
-
-func (cp clusterPoint) setZoom(zoom int) ClusterPoint {
+func (cp clusterPoint) SetZoom(zoom int) ClusterPoint {
 	cp.zoom = zoom
 	return cp
 }
-func (cp clusterPoint) getZoom() int {
+
+func (cp clusterPoint) Zoom() int {
 	return cp.zoom
 }
 
-func (cp clusterPoint) setNumPoints(numPoints int) ClusterPoint {
+func (cp clusterPoint) SetNumberOfPoints(numPoints int) ClusterPoint {
 	cp.NumPoints = numPoints
 	return cp
 }
-func (cp clusterPoint) getNumPoints() int {
+
+func (cp clusterPoint) NumberOfPoints() int {
 	return cp.NumPoints
 }
-func (cp clusterPoint) setId(id int) ClusterPoint {
+
+func (cp clusterPoint) SetID(id int) ClusterPoint {
 	cp.Id = id
 	return cp
+}
+
+func (cp clusterPoint) ID() int {
+	return cp.Id
 }
 
 // Cluster struct get a list or stream of geo objects
@@ -172,6 +168,11 @@ func (c *Cluster) ClusterPoints(points []GeoPoint, specificZoom int) error {
 		c.MaxZoom = 21
 	}
 
+	c.ClusterIdxSeed = int(math.Pow(10, float64(digitsCount(len(points)))))
+	c.clusterIDLast = c.ClusterIdxSeed
+
+	c.Points = points
+
 	if specificZoom != -1 {
 		c.specificZoom = specificZoom
 
@@ -187,13 +188,10 @@ func (c *Cluster) ClusterPoints(points []GeoPoint, specificZoom int) error {
 
 	//adding extra layer for infinite zoom (initial) layers data storage
 	c.Indexes = make([]*kdbush.KDBush, c.MaxZoom-c.MinZoom+2)
-	c.Points = points
 
 	//get digits number, start from next exponent
 	//if we have 78, all cluster will start from 100...
 	//if we have 986 points, all clusters ids will start from 1000
-	c.ClusterIdxSeed = int(math.Pow(10, float64(digitsCount(len(points)))))
-	c.clusterIDLast = c.ClusterIdxSeed
 
 	clusters := c.translateGeoPointsToClusterPoints(points)
 
@@ -238,9 +236,9 @@ func (c *Cluster) GetClusters(northWest, southEast GeoPoint, zoom int) []Cluster
 	var result []ClusterPoint = make([]ClusterPoint, len(ids))
 	for i := range ids {
 		p := index.Points[ids[i]].(ClusterPoint)
-		coordinates := ReverseMercatorProjection(p.getX(), p.getY())
-		p = p.setX(coordinates.Lon)
-		p = p.setY(coordinates.Lat)
+		X, Y := p.Coordinates()
+		coordinates := ReverseMercatorProjection(X, Y)
+		p = p.SetCoordinates(coordinates.Lon, coordinates.Lat)
 		result[i] = p
 	}
 
@@ -267,9 +265,9 @@ func (c *Cluster) AllClusters(zoom int) []ClusterPoint {
 	var result []ClusterPoint = make([]ClusterPoint, len(points))
 	for i := range points {
 		p := index.Points[i].(ClusterPoint)
-		coordinates := ReverseMercatorProjection(p.getX(), p.getY())
-		p = p.setX(coordinates.Lon)
-		p = p.setY(coordinates.Lat)
+		X, Y := p.Coordinates()
+		coordinates := ReverseMercatorProjection(X, Y)
+		p = p.SetCoordinates(coordinates.Lon, coordinates.Lat)
 		result[i] = p
 	}
 
@@ -351,9 +349,14 @@ func (c *Cluster) pointIDToMerkatorPoint(ids []int, points []kdbush.Point, x, y,
 	for i := range ids {
 		p := points[ids[i]].(ClusterPoint)
 		//translate our coordinate system to mercator
-		p = p.setX(float64(round(float64(c.TileSize) * (p.getX()*z2 - x))))
-		p = p.setY(float64(round(float64(c.TileSize) * (p.getY()*z2 - y))))
-		p = p.setZoom(0)
+
+		X, Y := p.Coordinates()
+
+		X = float64(round(float64(c.TileSize) * (X*z2 - x)))
+		Y = float64(round(float64(c.TileSize) * (Y*z2 - y)))
+
+		p = p.SetCoordinates(X, Y)
+		p = p.SetZoom(0)
 		result = append(result, p)
 	}
 	return result
@@ -362,9 +365,12 @@ func (c *Cluster) pointIDToLatLonPoint(ids []int, points []kdbush.Point) []Clust
 	var result []ClusterPoint = make([]ClusterPoint, len(ids))
 	for i := range ids {
 		p := points[ids[i]].(ClusterPoint)
-		coordinates := ReverseMercatorProjection(p.getX(), p.getY())
-		p = p.setX(coordinates.Lon)
-		p = p.setY(coordinates.Lat)
+
+		X, Y := p.Coordinates()
+
+		coordinates := ReverseMercatorProjection(X, Y)
+		p = p.SetCoordinates(coordinates.Lon, coordinates.Lat)
+
 		result[i] = p
 	}
 	return result
@@ -379,21 +385,24 @@ func (c *Cluster) clusterize(points []ClusterPoint, zoom int, tree *kdbush.KDBus
 	for pi := range points {
 		//skip points we have already clustered
 		p := points[pi]
-		if p.getZoom() <= zoom {
+		if p.Zoom() <= zoom {
 			continue
 		}
 
 		//mark this point as visited
-		p = p.setZoom(zoom)
+		p = p.SetZoom(zoom)
 
 		points[pi] = p
 
 		//find all neighbours
-		neighbourIds := tree.Within(&kdbush.SimplePoint{X: p.getX(), Y: p.getY()}, r)
+		X, Y := p.Coordinates()
 
-		nPoints := p.getNumPoints()
-		wx := p.getX() * float64(nPoints)
-		wy := p.getY() * float64(nPoints)
+		neighbourIds := tree.Within(&kdbush.SimplePoint{X: X, Y: Y}, r)
+
+		nPoints := p.NumberOfPoints()
+
+		wx := X * float64(nPoints)
+		wy := Y * float64(nPoints)
 
 		var foundNeighbours []ClusterPoint
 
@@ -401,11 +410,16 @@ func (c *Cluster) clusterize(points []ClusterPoint, zoom int, tree *kdbush.KDBus
 			b := points[neighbourIds[j]]
 
 			//Filter out neighbours, that are already processed (and processed point "p" as well)
-			if zoom < b.getZoom() {
-				wx += b.getX() * float64(b.getNumPoints())
-				wy += b.getY() * float64(b.getNumPoints())
-				nPoints += b.getNumPoints()
-				b = b.setZoom(zoom) //set the zoom to skip in other iterations
+			if zoom < b.Zoom() {
+				bX, bY := b.Coordinates()
+				bNPoints := b.NumberOfPoints()
+
+				nPoints += bNPoints
+
+				wx += bX * float64(bNPoints)
+				wy += bY * float64(bNPoints)
+
+				b = b.SetZoom(zoom) //set the zoom to skip in other iterations
 				foundNeighbours = append(foundNeighbours, b)
 				points[neighbourIds[j]] = b
 			}
@@ -415,11 +429,15 @@ func (c *Cluster) clusterize(points []ClusterPoint, zoom int, tree *kdbush.KDBus
 		//create new cluster
 		if len(foundNeighbours) > 0 {
 			newCluster = c.ClusterCustomizer.AggregateClusterPoints(newCluster, foundNeighbours, zoom)
-			newCluster = newCluster.setX(wx / float64(nPoints))
-			newCluster = newCluster.setY(wy / float64(nPoints))
-			newCluster = newCluster.setNumPoints(nPoints)
-			newCluster = newCluster.setZoom(InfinityZoomLevel)
-			newCluster = newCluster.setId(c.clusterIDLast)
+			newClusterX := wx / float64(nPoints)
+			newClusterY := wy / float64(nPoints)
+			newCluster = newCluster.SetCoordinates(newClusterX, newClusterY)
+
+			newCluster = newCluster.SetNumberOfPoints(nPoints)
+
+			newCluster = newCluster.SetZoom(InfinityZoomLevel)
+			newCluster = newCluster.SetID(c.clusterIDLast)
+
 			c.clusterIDLast += 1
 		}
 		result = append(result, newCluster)
@@ -448,14 +466,13 @@ func (c *Cluster) translateGeoPointsToClusterPoints(points []GeoPoint) []Cluster
 	var result = make([]ClusterPoint, len(points))
 	for i, p := range points {
 		cp := c.ClusterCustomizer.GeoPoint2ClusterPoint(p)
-		cp = cp.setZoom(InfinityZoomLevel)
+		cp = cp.SetZoom(InfinityZoomLevel)
 		X, Y := MercatorProjection(p.GetCoordinates())
-		cp = cp.setX(X)
-		cp = cp.setY(Y)
+		cp = cp.SetCoordinates(X, Y)
 
-		cp = cp.setNumPoints(1)
+		cp = cp.SetNumberOfPoints(1)
 
-		cp = cp.setId(i)
+		cp = cp.SetID(i)
 
 		result[i] = cp
 	}

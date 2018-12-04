@@ -34,7 +34,7 @@ func TestCluster_Customizer(t *testing.T) {
 
 	var result []ClusterPoint = c.GetClusters(northWest, southEast, 2)
 	for _, p := range result {
-		assert.Equal(t, len(p.(testClusterPoint).aggregatedClusters), p.getNumPoints()-1, "We get all points except itself")
+		assert.Equal(t, len(p.(testClusterPoint).aggregatedClusters), p.NumberOfPoints()-1, "We get all points except itself")
 	}
 }
 
@@ -42,42 +42,37 @@ func (cp testClusterPoint) Coordinates() (float64, float64) {
 	return cp.X, cp.Y
 }
 
-func (cp testClusterPoint) getX() float64 {
-	return cp.X
-}
-
-func (cp testClusterPoint) getY() float64 {
-	return cp.Y
-}
-
-func (cp testClusterPoint) setX(x float64) ClusterPoint {
-	cp.X = x
+func (cp testClusterPoint) SetCoordinates(X, Y float64) ClusterPoint {
+	cp.X = X
+	cp.Y = Y
 	return cp
 }
 
-func (cp testClusterPoint) setY(y float64) ClusterPoint {
-	cp.Y = y
-	return cp
-}
-
-func (cp testClusterPoint) setZoom(zoom int) ClusterPoint {
+func (cp testClusterPoint) SetZoom(zoom int) ClusterPoint {
 	cp.zoom = zoom
 	return cp
 }
-func (cp testClusterPoint) getZoom() int {
+
+func (cp testClusterPoint) Zoom() int {
 	return cp.zoom
 }
 
-func (cp testClusterPoint) setNumPoints(numPoints int) ClusterPoint {
+func (cp testClusterPoint) SetNumberOfPoints(numPoints int) ClusterPoint {
 	cp.NumPoints = numPoints
 	return cp
 }
-func (cp testClusterPoint) getNumPoints() int {
+
+func (cp testClusterPoint) NumberOfPoints() int {
 	return cp.NumPoints
 }
-func (cp testClusterPoint) setId(id int) ClusterPoint {
+
+func (cp testClusterPoint) SetID(id int) ClusterPoint {
 	cp.Id = id
 	return cp
+}
+
+func (cp testClusterPoint) ID() int {
+	return cp.Id
 }
 
 type testCustomizer struct {

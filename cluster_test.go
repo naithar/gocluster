@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"encoding/json"
+	"io/ioutil"
+
+	"github.com/stretchr/testify/assert"
 )
-
-
 
 func TestNewCluster(t *testing.T) {
 	points := importData("./testdata/places.json")
@@ -103,8 +102,8 @@ func TestCluster_GetClusters(t *testing.T) {
 	c.NodeSize = 64
 	c.ClusterPoints(geoPoints)
 
-	northWest := simplePoint{71.36718750000001, -83.79204408779539}
-	southEast := simplePoint{-71.01562500000001, 83.7539108491127}
+	northWest := SimplePoint{71.36718750000001, -83.79204408779539}
+	southEast := SimplePoint{-71.01562500000001, 83.7539108491127}
 
 	var result []ClusterPoint = c.GetClusters(northWest, southEast, 2)
 	assert.NotEmpty(t, result)
@@ -115,8 +114,8 @@ func TestCluster_GetClusters(t *testing.T) {
 		rp := result[i]
 		ep := expectedPoints[i]
 
-		t.Logf("Zoom", rp.getZoom())
-		t.Logf("Coordinates are:", rp.getX(), ep.Geometry.Coordinates[0])
+		t.Logf("Zoom: %v", rp.getZoom())
+		t.Logf("Coordinates are: %v, %v", rp.getX(), ep.Geometry.Coordinates[0])
 		assert.True(t, floatEquals(rp.getX(), ep.Geometry.Coordinates[0]))
 		assert.True(t, floatEquals(rp.getY(), ep.Geometry.Coordinates[1]))
 		if rp.getNumPoints() > 1 {
@@ -127,7 +126,6 @@ func TestCluster_GetClusters(t *testing.T) {
 	//resultJSON, _ :=  json.MarshalIndent(result,"","    ")
 	//fmt.Printf("getting points %v \n",string(resultJSON))
 }
-
 
 func TestCluster_AllClusters(t *testing.T) {
 	points := importData("./testdata/places.json")
@@ -147,7 +145,6 @@ func TestCluster_AllClusters(t *testing.T) {
 	c.TileSize = 512
 	c.NodeSize = 64
 	c.ClusterPoints(geoPoints)
-
 
 	var result []ClusterPoint = c.AllClusters(2)
 	assert.NotEmpty(t, result)
@@ -192,7 +189,7 @@ func ExampleCluster_GetTile() {
 
 	c.ClusterPoints(geoPoints)
 	result := c.GetTile(0, 0, 4)
-	fmt.Printf("%+v",result)
+	fmt.Printf("%+v", result)
 	// Output: [{X:-2418 Y:165 zoom:0 Id:62 NumPoints:1} {X:-3350 Y:253 zoom:0 Id:22 NumPoints:1}]
 
 }
@@ -208,23 +205,12 @@ func ExampleCluster_GetClusters() {
 	c := NewCluster()
 	c.ClusterPoints(geoPoints)
 
-	northWest := simplePoint{71.36718750000001, -83.79204408779539}
-	southEast := simplePoint{-71.01562500000001, 83.7539108491127}
+	northWest := SimplePoint{71.36718750000001, -83.79204408779539}
+	southEast := SimplePoint{-71.01562500000001, 83.7539108491127}
 
 	var result []ClusterPoint = c.GetClusters(northWest, southEast, 2)
-	fmt.Printf("%+v",result[:3])
+	fmt.Printf("%+v", result[:3])
 	// Output: [{X:-14.473194953510028 Y:26.157965399212813 zoom:2 Id:107 NumPoints:1} {X:-12.408741828510014 Y:58.16339752811905 zoom:2 Id:159 NumPoints:1} {X:-9.269962828651519 Y:42.928736057812586 zoom:2 Id:127 NumPoints:1}]
-}
-
-
-
-////Helpers
-type simplePoint struct {
-	Lon, Lat float64
-}
-
-func (sp simplePoint) GetCoordinates() GeoCoordinates {
-	return GeoCoordinates{sp.Lon, sp.Lat}
 }
 
 type TestPoint struct {

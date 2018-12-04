@@ -27,7 +27,7 @@ func TestCluster_Customizer(t *testing.T) {
 	customizer := testCustomizer{}
 
 	c := NewClusterFromCustomizer(customizer)
-	c.ClusterPoints(geoPoints)
+	c.ClusterPoints(geoPoints, -1)
 
 	northWest := SimplePoint{71.36718750000001, -83.79204408779539}
 	southEast := SimplePoint{-71.01562500000001, 83.7539108491127}

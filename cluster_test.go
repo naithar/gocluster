@@ -43,7 +43,7 @@ func TestCluster_GetTile00(t *testing.T) {
 	c.MaxZoom = 3
 	c.TileSize = 256
 	c.NodeSize = 64
-	c.ClusterPoints(geoPoints)
+	c.ClusterPoints(geoPoints, -1)
 	result := c.GetTile(0, 0, 0)
 	assert.NotEmpty(t, result)
 
@@ -65,7 +65,7 @@ func TestCluster_GetTileDefault(t *testing.T) {
 	for i := range points {
 		geoPoints[i] = points[i]
 	}
-	c.ClusterPoints(geoPoints)
+	c.ClusterPoints(geoPoints, -1)
 	result := c.GetTile(0, 0, 0)
 	assert.NotEmpty(t, result)
 
@@ -100,7 +100,7 @@ func TestCluster_GetClusters(t *testing.T) {
 	c.MaxZoom = 17
 	c.TileSize = 512
 	c.NodeSize = 64
-	c.ClusterPoints(geoPoints)
+	c.ClusterPoints(geoPoints, -1)
 
 	northWest := SimplePoint{71.36718750000001, -83.79204408779539}
 	southEast := SimplePoint{-71.01562500000001, 83.7539108491127}
@@ -144,7 +144,7 @@ func TestCluster_AllClusters(t *testing.T) {
 	c.MaxZoom = 17
 	c.TileSize = 512
 	c.NodeSize = 64
-	c.ClusterPoints(geoPoints)
+	c.ClusterPoints(geoPoints, -1)
 
 	var result []ClusterPoint = c.AllClusters(2)
 	assert.NotEmpty(t, result)
@@ -187,7 +187,7 @@ func ExampleCluster_GetTile() {
 		geoPoints[i] = points[i]
 	}
 
-	c.ClusterPoints(geoPoints)
+	c.ClusterPoints(geoPoints, -1)
 	result := c.GetTile(0, 0, 4)
 	fmt.Printf("%+v", result)
 	// Output: [{X:-2418 Y:165 zoom:0 Id:62 NumPoints:1} {X:-3350 Y:253 zoom:0 Id:22 NumPoints:1}]
@@ -203,7 +203,7 @@ func ExampleCluster_GetClusters() {
 	}
 
 	c := NewCluster()
-	c.ClusterPoints(geoPoints)
+	c.ClusterPoints(geoPoints, -1)
 
 	northWest := SimplePoint{71.36718750000001, -83.79204408779539}
 	southEast := SimplePoint{-71.01562500000001, 83.7539108491127}

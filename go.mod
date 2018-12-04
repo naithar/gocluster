@@ -1,4 +1,4 @@
-module cluster
+module github.com/naithar/gocluster
 
 require (
 	github.com/MadAppGang/gocluster v0.0.0-20161226093512-f4629d7b12f8
